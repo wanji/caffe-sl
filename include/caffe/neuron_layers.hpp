@@ -804,6 +804,39 @@ class PReLULayer : public NeuronLayer<Dtype> {
   Blob<Dtype> bottom_memory_;  // memory for in-place computation
 };
 
+/**
+ * @brief Normalizes the blob to have unit Lp norm.
+ */
+template <typename Dtype>
+class L2NormLayer : public NeuronLayer<Dtype> {
+ public:
+  explicit L2NormLayer(const LayerParameter& param)
+      : NeuronLayer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "L2Norm"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  /// @copydoc L2NormLayer
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  /**
+   * @brief Computes the error gradient w.r.t. the inputs.
+   */
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  Dtype lpnorm_;
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_NEURON_LAYERS_HPP_
