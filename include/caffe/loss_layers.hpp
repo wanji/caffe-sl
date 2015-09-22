@@ -801,6 +801,13 @@ class PairwiseRankingLossLayer : public LossLayer<Dtype> {
    */
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  /**
+   * Unlike most loss layers, in the PairwiseRankingLossLayer we can backpropagate
+   * to both inputs -- override to return true and always allow force_backward.
+   */
+  virtual inline bool AllowForceBackward(const int bottom_index) const {
+    return true;
+  }
 };
 
 }  // namespace caffe
