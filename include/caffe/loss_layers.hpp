@@ -768,6 +768,41 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   int softmax_axis_, outer_num_, inner_num_;
 };
 
+/**
+ * @brief Computes the hinge loss for pair-wise learning to rank task.
+ *
+ * @param bottom input Blob vector (length 2)
+ *   -# @f$ (N \times 1 \times 1 \times 1) @f$
+ *      similarity @f$ S(q, p^+) @f$.
+ *   -# @f$ (N \times 1 \times 1 \times 1) @f$
+ *      similarity @f$ S(q, p^-) @f$.
+ * @param top output Blob vector (length 1)
+ *   -# @f$ (1 \times 1 \times 1 \times 1) @f$
+ *      the computed hinge loss: @f$ E =
+ *        \frac{1}{N} \sum\limits_{n=1}^N
+ *        [\max(0, margin - S(q, p^+) + S(q, p^-))]
+ *      @f$
+ */
+template <typename Dtype>
+class PairwiseRankingLossLayer : public LossLayer<Dtype> {
+ public:
+  explicit PairwiseRankingLossLayer(const LayerParameter& param)
+      : LossLayer<Dtype>(param) {}
+
+  virtual inline const char* type() const { return "HingeLoss"; }
+
+ protected:
+  /// @copydoc PairwiseRankingLossLayer
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  /**
+   * @brief Computes the hinge loss error gradient w.r.t. the similarities.
+   */
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_LOSS_LAYERS_HPP_

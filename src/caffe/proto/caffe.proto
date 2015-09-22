@@ -302,6 +302,7 @@ message ParamSpec {
 // Update the next available ID when you add a new LayerParameter field.
 //
 // LayerParameter next available layer-specific ID: 139 (last added: tile_param)
+// LayerParameter next available layer-specific ID: 202 (last added: pairwise_ranking_loss_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -385,6 +386,7 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  optional PairwiseRankingLossParameter pairwise_ranking_loss_param = 201;
 }
 
 // Message that stores parameters used to apply transformation
@@ -626,6 +628,10 @@ message HingeLossParameter {
   }
   // Specify the Norm to use L1 or L2
   optional Norm norm = 1 [default = L1];
+}
+
+message PairwiseRankingLossParameter {
+  optional float margin = 1 [default = 1.0];
 }
 
 message ImageDataParameter {
