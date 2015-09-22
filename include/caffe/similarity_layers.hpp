@@ -44,8 +44,6 @@ class EuclideanSimilarityLayer : public SimilarityLayer<Dtype> {
  public:
   explicit EuclideanSimilarityLayer(const LayerParameter& param)
      : SimilarityLayer<Dtype>(param) {}
-  virtual void LayerSetUp(
-      const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
   virtual void Reshape(
       const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
   virtual inline const char* type() const { return "EuclideanSimilarity"; }
@@ -64,19 +62,14 @@ class EuclideanSimilarityLayer : public SimilarityLayer<Dtype> {
 };
 
 /**
- * @brief Computes the Euclidean Similarity @f$
- *          S = - \left| \left| q - p \right| \right|_2^2 @f$.
+ * @brief Computes the Dot-Product Similarity @f$ S = q^\top  p  @f$.
  */
 template <typename Dtype>
 class DotProductSimilarityLayer : public SimilarityLayer<Dtype> {
  public:
   explicit DotProductSimilarityLayer(const LayerParameter& param)
      : SimilarityLayer<Dtype>(param) {}
-  virtual void LayerSetUp(
-      const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(
-      const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
-
+  virtual inline const char* type() const { return "DotProductSimilarity"; }
  protected:
   /// @copydoc EuclideanLossLayer
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
