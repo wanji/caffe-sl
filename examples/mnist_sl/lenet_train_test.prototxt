@@ -1,0 +1,207 @@
+name: "LeNet"
+layer {
+  name: "mnist"
+  type: "TripletImageData"
+  top: "data"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.00390625
+  }
+  image_data_param {
+    source: "examples/mnist_sl/train.lst"
+    new_width: 28
+    new_height: 28
+    batch_size: 16
+    root_folder: "data/mnist/images/train/"
+  }
+}
+layer {
+  name: "mnist"
+  type: "TripletImageData"
+  top: "data"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.00390625
+  }
+  image_data_param {
+    source: "examples/mnist_sl/t10k.lst"
+    new_width: 28
+    new_height: 28
+    batch_size: 16
+    root_folder: "data/mnist/images/t10k/"
+  }
+}
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 20
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 50
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "pool2"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+}
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "ip2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "l2"
+  type: "L2Norm"
+  bottom: "ip2"
+  top: "ip2norm"
+}
+layer {
+  name: "triplet"
+  type: "Slice"
+  bottom: "ip2norm"
+  top: "qry"
+  top: "pos"
+  top: "neg"
+  slice_param {
+    axis: 0
+    slice_point: 16
+    slice_point: 32
+  }
+}
+layer {
+  name: "pos_sim"
+  type: "DotProductSimilarity"
+  bottom: "qry"
+  bottom: "pos"
+  top: "pos_sim"
+}
+layer {
+  name: "neg_sim"
+  type: "DotProductSimilarity"
+  # type: "EuclideanSimilarity"
+  bottom: "qry"
+  bottom: "neg"
+  top: "neg_sim"
+}
+layer {
+  name: "loss"
+  type: "PairwiseRankingLoss"
+  bottom: "pos_sim"
+  bottom: "neg_sim"
+  top: "loss"
+  pairwise_ranking_loss_param {
+    margin: 1
+  }
+}
+layer {
+  name: "accuracy"
+  type: "RankAccuracy"
+  bottom: "pos_sim"
+  bottom: "neg_sim"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
