@@ -10,11 +10,11 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "examples/mnist_sl/train.lst"
+    source: "examples/mnist_sl/data/train.tri"
     new_width: 28
     new_height: 28
     batch_size: 16
-    root_folder: "data/mnist/images/train/"
+    root_folder: "examples/mnist_sl/data/train/"
   }
 }
 layer {
@@ -28,11 +28,11 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "examples/mnist_sl/t10k.lst"
+    source: "examples/mnist_sl/data/t10k.tri"
     new_width: 28
     new_height: 28
     batch_size: 16
-    root_folder: "data/mnist/images/t10k/"
+    root_folder: "examples/mnist_sl/data/t10k/"
   }
 }
 layer {

@@ -47,6 +47,7 @@ def getargs():
 def main(args):
     """ Main entry.
     """
+    logging.info("Loading image lists ...")
     img_lst = dict()
     with open(args.ori_lst, 'r') as orif:
         for line in orif:
@@ -54,7 +55,9 @@ def main(args):
             if imid not in img_lst:
                 img_lst[imid] = []
             img_lst[imid].append(impath)
+    logging.info("Done!")
 
+    logging.info("Generating triplets ...")
     with open(args.tri_lst, 'w') as trif:
         for i in xrange(args.num_tri):
             if i % 10000 == 0:
