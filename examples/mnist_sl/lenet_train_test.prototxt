@@ -173,6 +173,7 @@ layer {
 layer {
   name: "pos_sim"
   type: "DotProductSimilarity"
+  # type: "EuclideanSimilarity"
   bottom: "qry"
   bottom: "pos"
   top: "pos_sim"

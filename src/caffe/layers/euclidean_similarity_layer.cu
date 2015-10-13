@@ -13,18 +13,18 @@ void EuclideanSimilarityLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bo
   int num = bottom[0]->num();
   int count = bottom[0]->count();
   int dim = count / num;
-  caffe_gpu_sub(
+  caffe_sub(
       count,
-      bottom[0]->gpu_data(),
-      bottom[1]->gpu_data(),
-      diff_.mutable_gpu_data());
-  Dtype * sim = top[0]->mutable_gpu_data();
-  const Dtype * pd = diff_.gpu_data();
+      bottom[0]->cpu_data(),
+      bottom[1]->cpu_data(),
+      diff_.mutable_cpu_data());
+  Dtype * sim = top[0]->mutable_cpu_data();
+  const Dtype * pd = diff_.cpu_data();
   for (int i=0; i<num; ++i) {
-    caffe_gpu_dot(count, pd, pd, sim + i);
+    sim[i] = caffe_cpu_dot(dim, pd, pd);
     pd += dim;
   }
-  caffe_gpu_scale(count, Dtype(-1.0), sim, sim);
+  caffe_cpu_scale(num, Dtype(-1.0), sim, sim);
 }
 
 template <typename Dtype>
@@ -34,14 +34,14 @@ void EuclideanSimilarityLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
   int count = bottom[0]->count();
   int dim = count / num;
 
-  const Dtype * pd = diff_.gpu_data();
-  const Dtype * pt = top[0]->gpu_diff();
-  Dtype * pa = bottom[0]->mutable_gpu_diff();
-  Dtype * pb = bottom[1]->mutable_gpu_diff();
+  const Dtype * pd = diff_.cpu_data();
+  const Dtype * pt = top[0]->cpu_diff();
+  Dtype * pa = bottom[0]->mutable_cpu_diff();
+  Dtype * pb = bottom[1]->mutable_cpu_diff();
 
   for (int i=0; i<num; ++i) {
-    caffe_gpu_scale(dim, -pt[i], pd, pa);
-    caffe_gpu_scale(dim,  pt[i], pd, pb);
+    caffe_cpu_scale(dim, -pt[i], pd, pa);
+    caffe_cpu_scale(dim,  pt[i], pd, pb);
     pd += dim; pa += dim; pb += dim;
   }
 }

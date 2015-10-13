@@ -1,6 +1,6 @@
 # caffe-sl
 
-`caffe`-based implementation of the Deep Similarity Learning algorithm proposed the [MM 2014 paper](http://dl.acm.org/citation.cfm?id=2654948).
+`caffe`-based implementation of the Deep Similarity Learning algorithm used in the [MM 2014 paper](http://dl.acm.org/citation.cfm?id=2654948).
 
 
 ## Example

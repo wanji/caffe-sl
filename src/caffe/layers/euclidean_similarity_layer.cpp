@@ -28,10 +28,12 @@ void EuclideanSimilarityLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bo
       bottom[1]->cpu_data(),
       diff_.mutable_cpu_data());
   Dtype * sim = top[0]->mutable_cpu_data();
+  const Dtype * pd = diff_.cpu_data();
   for (int i=0; i<num; ++i) {
-    const Dtype * p = diff_.cpu_data() + i * dim;
-    sim[i] = caffe_cpu_dot(count, p, p);
+    sim[i] = caffe_cpu_dot(dim, pd, pd);
+    pd += dim;
   }
+  caffe_cpu_scale(num, Dtype(-1.0), sim, sim);
 }
 
 template <typename Dtype>
@@ -47,8 +49,8 @@ void EuclideanSimilarityLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
   Dtype * pb = bottom[1]->mutable_cpu_diff();
 
   for (int i=0; i<num; ++i) {
-    caffe_cpu_scale(dim,  pt[i], pd, pa);
-    caffe_cpu_scale(dim, -pt[i], pd, pb);
+    caffe_cpu_scale(dim, -pt[i], pd, pa);
+    caffe_cpu_scale(dim,  pt[i], pd, pb);
     pd += dim; pa += dim; pb += dim;
   }
 }
