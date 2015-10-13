@@ -19,12 +19,14 @@ void PairwiseRankingLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bo
   int count = bottom[0]->count();
 
   Dtype* loss = top[0]->mutable_cpu_data();
+  loss[0] = 0;
   for (int i=0; i<count; ++i) {
     per_triplet_loss[i] = std::max(Dtype(0),
         this->layer_param_.pairwise_ranking_loss_param().margin()
         - pos_sim[i] + neg_sim[i]);
     loss[0] += per_triplet_loss[i];
   }
+  loss[0] /= count;
 }
 
 template <typename Dtype>
@@ -42,6 +44,6 @@ void PairwiseRankingLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
 }
 
 INSTANTIATE_CLASS(PairwiseRankingLossLayer);
-REGISTER_LAYER_CLASS(HingeLoss);
+REGISTER_LAYER_CLASS(PairwiseRankingLoss);
 
 }  // namespace caffe

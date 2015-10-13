@@ -113,7 +113,7 @@ void TripletImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
   this->transformed_data_.Reshape(top_shape);
   // Reshape batch according to the batch_size.
-  top_shape[0] = batch_size;
+  top_shape[0] = batch_size * 3;
   batch->data_.Reshape(top_shape);
 
   Dtype* prefetch_data = batch->data_.mutable_cpu_data();

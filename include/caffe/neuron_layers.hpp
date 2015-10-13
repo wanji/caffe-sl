@@ -811,8 +811,15 @@ template <typename Dtype>
 class L2NormLayer : public NeuronLayer<Dtype> {
  public:
   explicit L2NormLayer(const LayerParameter& param)
-      : NeuronLayer<Dtype>(param) {}
+      : NeuronLayer<Dtype>(param), inv_lpnorm_(NULL) {}
+  virtual ~L2NormLayer() {
+    if (inv_lpnorm_ != NULL) {
+      delete [] inv_lpnorm_;
+    }
+  }
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "L2Norm"; }
@@ -834,7 +841,7 @@ class L2NormLayer : public NeuronLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  Dtype lpnorm_;
+  Dtype * inv_lpnorm_;
 };
 
 }  // namespace caffe
