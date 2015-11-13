@@ -47,7 +47,7 @@ The two `slice_point`s shoud be set to `batch_size` and `batch_size * 2`.
 The similarities between query and positive images, query and negative images will be calculated separately. 
 Then, these similarities will be feed to the `PairwiseRankingLossLayer`.
 
-
+<!--
 ## Citation
 
 Please cite the following paper if you use this code:
@@ -62,7 +62,7 @@ Please cite the following paper if you use this code:
   organization={ACM}
 }
 ```
-
+-->
 
 ------------------------------------------------
 
