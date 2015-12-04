@@ -147,6 +147,20 @@ cv::Mat DecodeDatumToCVMat(const Datum& datum, bool is_color);
 void CVMatToDatum(const cv::Mat& cv_img, Datum* datum);
 #endif  // USE_OPENCV
 
+template<typename T>
+int ReadBinaryBlob(const string& filename, T * data, const int count) {
+  FILE * fp = fopen(filename.c_str(), "rb");
+  if (fp == NULL) {
+    return -1;
+  }
+  int cnt = fread(data, sizeof(data[0]), count, fp);
+  if (cnt != count) {
+    return -2;
+  }
+  fclose(fp);
+  return 0;
+}
+
 }  // namespace caffe
 
 #endif   // CAFFE_UTIL_IO_H_
