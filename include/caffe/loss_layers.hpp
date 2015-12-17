@@ -853,6 +853,63 @@ class PairwiseRankingLossLayer : public LossLayer<Dtype> {
   }
 };
 
+/**
+ * @brief Computes the upper bound of the HDML loss.
+ *
+ * @param bottom input Blob vector (length 3)
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      query feature.
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      positive feature.
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      negative feature.
+ * @param top output Blob vector (length 1)
+ *   -# @f$ (1 \times 1 \times 1 \times 1) @f$
+ *      the computed upper bound of the HDML loss: @f$ E =
+ *      @f$
+ */
+template <typename Dtype>
+class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
+ public:
+  explicit HDMLLossUpperBoundLayer(const LayerParameter& param)
+      : LossLayer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "HDMLLossUpperBound"; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  /// @copydoc HDMLLossUpperBoundLayer
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  /**
+   * @brief Computes the hinge loss error gradient w.r.t. the similarities.
+   */
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  /**
+   * Unlike most loss layers, in the HDMLLossUpperBoundLayer we can backpropagate
+   * to both inputs -- override to return true and always allow force_backward.
+   */
+  virtual inline bool AllowForceBackward(const int bottom_index) const {
+    return true;
+  }
+ private:
+  Blob<int> max_qry_buffer_;
+  Blob<int> max_pos_buffer_;
+  Blob<int> max_neg_buffer_;
+  Blob<Dtype> max_abc_loss_;
+  Blob<int> h_qry_;
+  Blob<int> g_qry_;
+  Blob<int> h_pos_;
+  Blob<int> g_pos_;
+  Blob<int> h_neg_;
+  Blob<int> g_neg_;
+  const Dtype c_max_flt_ = 1e30;
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_LOSS_LAYERS_HPP_
