@@ -897,15 +897,15 @@ class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
     return true;
   }
  private:
-  Blob<int> max_qry_buffer_;
-  Blob<int> max_pos_buffer_;
-  Blob<int> max_neg_buffer_;
-  Blob<Dtype> max_abc_loss_;
+  Blob<Dtype> infer_abc_loss_;
+  Blob<int> infer_qry_buffer_;
+  Blob<int> infer_pos_buffer_;
+  Blob<int> infer_neg_buffer_;
   Blob<int> h_qry_;
-  Blob<int> g_qry_;
   Blob<int> h_pos_;
-  Blob<int> g_pos_;
   Blob<int> h_neg_;
+  Blob<int> g_qry_;
+  Blob<int> g_pos_;
   Blob<int> g_neg_;
   const Dtype c_max_flt_ = 1e30;
 };
