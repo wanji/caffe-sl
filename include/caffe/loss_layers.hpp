@@ -897,17 +897,23 @@ class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
     return true;
   }
  private:
-  Blob<Dtype> infer_abc_loss_;
-  Blob<int> infer_qry_buffer_;
-  Blob<int> infer_pos_buffer_;
-  Blob<int> infer_neg_buffer_;
-  Blob<int> h_qry_;
-  Blob<int> h_pos_;
-  Blob<int> h_neg_;
-  Blob<int> g_qry_;
-  Blob<int> g_pos_;
-  Blob<int> g_neg_;
-  const Dtype c_max_flt_ = 1e30;
+  void compute_infer_abc_loss(const Blob<Dtype> * qry,
+      const Blob<Dtype> * pos, const Blob<Dtype> * neg);
+  Dtype compute_loss_ub();
+
+  Blob<Dtype> infer_abc_loss_;  // N x D x 3 x 1, cont(i, e_i) in Eq (10)
+  Blob<int> infer_qry_buffer_;  // N x D x 3 x 1, a in Eq (10)
+  Blob<int> infer_pos_buffer_;  // N x D x 3 x 1, b in Eq (10)
+  Blob<int> infer_neg_buffer_;  // N x D x 3 x 1, c in Eq (10)
+
+  Blob<int> h_qry_;             // N x D x 1 x 1, h   in Eq(6)
+  Blob<int> h_pos_;             // N x D x 1 x 1, h^+ in Eq(6)
+  Blob<int> h_neg_;             // N x D x 1 x 1, h^- in Eq(6)
+
+  Blob<int> g_qry_;             // N x D x 1 x 1, g   in Eq(6)
+  Blob<int> g_pos_;             // N x D x 1 x 1, g^+ in Eq(6)
+  Blob<int> g_neg_;             // N x D x 1 x 1, g^- in Eq(6)
+  static const Dtype c_max_flt_ = 1e30;
 };
 
 }  // namespace caffe
