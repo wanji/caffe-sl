@@ -878,6 +878,7 @@ class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
 
   virtual inline const char* type() const { return "HDMLLossUpperBound"; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
+  virtual inline int ExactNumBottomBlobs() const { return 3; }
 
  protected:
   /// @copydoc HDMLLossUpperBoundLayer
@@ -897,11 +898,13 @@ class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
     return true;
   }
  private:
-  void compute_infer_abc_loss(const Blob<Dtype> * qry,
+  void compute_h(const Blob<Dtype> * qry,
+      const Blob<Dtype> * pos, const Blob<Dtype> * neg);
+  void compute_infer_loss(const Blob<Dtype> * qry,
       const Blob<Dtype> * pos, const Blob<Dtype> * neg);
   Dtype compute_loss_ub();
 
-  Blob<Dtype> infer_abc_loss_;  // N x D x 3 x 1, cont(i, e_i) in Eq (10)
+  Blob<Dtype> infer_cont_;      // N x D x 3 x 1, cont(i, e_i) in Eq (10)
   Blob<int> infer_qry_buffer_;  // N x D x 3 x 1, a in Eq (10)
   Blob<int> infer_pos_buffer_;  // N x D x 3 x 1, b in Eq (10)
   Blob<int> infer_neg_buffer_;  // N x D x 3 x 1, c in Eq (10)
