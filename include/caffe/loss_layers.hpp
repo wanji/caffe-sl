@@ -916,7 +916,6 @@ class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
   Blob<int> g_qry_;             // N x D x 1 x 1, g   in Eq(6)
   Blob<int> g_pos_;             // N x D x 1 x 1, g^+ in Eq(6)
   Blob<int> g_neg_;             // N x D x 1 x 1, g^- in Eq(6)
-  static const Dtype c_max_flt_ = 1e30;
 };
 
 }  // namespace caffe

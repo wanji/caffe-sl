@@ -59,7 +59,7 @@ void HDMLLossUpperBoundLayer<Dtype>::compute_infer_loss(
                         this->infer_neg_buffer_.offset(k, i, 1);
 
       for (int ei=-1; ei<=1; ++ei) {
-        p_cont[ei] = -this->c_max_flt_;
+        p_cont[ei] = -1 - qry_k[i] - pos_k[i] - neg_k[i];
       }
       Dtype cont;
       for (int a=-1; a<=1; a+=2) {
@@ -121,7 +121,7 @@ Dtype HDMLLossUpperBoundLayer<Dtype>::compute_loss_ub() {
       p_c += step;
       p_cont += 3;
       for (int m=-i-1; m<=+i+1; ++m) {
-        p_m_cur[m] = -this->c_max_flt_;
+        p_m_cur[m] = -1e30;
 #if 0
         for (int ei=-1; ei<=1; ++ei) {
           if (m-ei >= -i && m-ei <= i) {
