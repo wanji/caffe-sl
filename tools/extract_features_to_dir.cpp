@@ -180,6 +180,9 @@ int feature_extraction_pipeline(int argc, char** argv) {
   std::vector<Blob<float>*> input_vec;
   std::vector<int> image_indices(num_features, 0);
   for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index) {
+    if (batch_index % 100 == 0) {
+      LOG(ERROR) << "\t" << batch_index << "/" << num_mini_batches;
+    }
     feature_extraction_net->Forward(input_vec);
     for (int i = 0; i < num_features; ++i) {
       const shared_ptr<Blob<Dtype> > feature_blob = feature_extraction_net
@@ -187,6 +190,7 @@ int feature_extraction_pipeline(int argc, char** argv) {
       DumpFeat(root_dir, blob_names[i], feature_blob, batch_index);
     }  // for (int i = 0; i < num_features; ++i)
   }  // for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index)
+  LOG(INFO) << "\t" << num_mini_batches << "/" << num_mini_batches;
   // write the meta data
   for (int i = 0; i < num_features; ++i) {
     const shared_ptr<Blob<Dtype> > feature_blob = feature_extraction_net

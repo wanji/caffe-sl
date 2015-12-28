@@ -260,6 +260,34 @@ class ImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
 };
 
 /**
+ * @brief Provides data to the Net from binary files.
+ *
+ * TODO(dox): thorough documentation for Forward and proto params.
+ */
+template <typename Dtype>
+class BinaryDataLayer : public BasePrefetchingDataLayer<Dtype> {
+ public:
+  explicit BinaryDataLayer(const LayerParameter& param)
+      : BasePrefetchingDataLayer<Dtype>(param) {}
+  virtual ~BinaryDataLayer();
+  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "BinaryData"; }
+  virtual inline int ExactNumBottomBlobs() const { return 0; }
+  virtual inline int ExactNumTopBlobs() const { return 2; }
+
+ protected:
+  shared_ptr<Caffe::RNG> prefetch_rng_;
+  virtual void ShuffleImages();
+  virtual void load_batch(Batch<Dtype>* batch);
+
+  vector<std::pair<std::string, int> > lines_;
+  int lines_id_;
+  vector<int> top_shape_;
+};
+
+/**
  * @brief Provides triplet data to the Net from image files.
  *
  * TODO(dox): thorough documentation for Forward and proto params.
