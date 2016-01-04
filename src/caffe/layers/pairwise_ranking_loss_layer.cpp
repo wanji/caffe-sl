@@ -35,10 +35,17 @@ void PairwiseRankingLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
   if (propagate_down[0]) {
     Dtype* pos_diff = bottom[0]->mutable_cpu_diff();
     Dtype* neg_diff = bottom[1]->mutable_cpu_diff();
+    const Dtype* pos_sim = bottom[0]->cpu_data();
+    const Dtype* neg_sim = bottom[1]->cpu_data();
     int count = bottom[0]->count();
     for (int i=0; i<count; ++i) {
-      pos_diff[i] = pos_diff[i] ? -1 : 0;
-      neg_diff[i] = pos_diff[i] ?  1 : 0;
+      if (pos_diff[i] && pos_sim[i] > neg_sim[i]) {
+        pos_diff[i] = -1;
+        neg_diff[i] = 1;
+      } else {
+        pos_diff[i] = 0;
+        neg_diff[i] = 0;
+      }
     }
   }
 }
