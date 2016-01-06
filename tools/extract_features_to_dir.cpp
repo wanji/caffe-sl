@@ -1,5 +1,7 @@
 #include <string>
 #include <vector>
+#include <iostream>
+#include <sstream>
 
 #include "boost/algorithm/string.hpp"
 #include "google/protobuf/text_format.h"
@@ -8,7 +10,6 @@
 #include "caffe/common.hpp"
 #include "caffe/net.hpp"
 #include "caffe/proto/caffe.pb.h"
-#include "caffe/util/db.hpp"
 #include "caffe/util/format.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/vision_layers.hpp"
@@ -18,8 +19,8 @@ using caffe::Caffe;
 using caffe::Datum;
 using caffe::Net;
 using boost::shared_ptr;
+using ::boost::filesystem::path;
 using std::string;
-namespace db = caffe::db;
 
 template<typename Dtype>
 int feature_extraction_pipeline(int argc, char** argv);
@@ -29,17 +30,71 @@ int main(int argc, char** argv) {
 //  return feature_extraction_pipeline<double>(argc, argv);
 }
 
+inline void MakeFeatDir(const string & root_dir, const string & featname) {
+  LOG(INFO)<< "Creating dir for feature: " << featname;
+  path feat_dir = path(root_dir) / featname;
+  bool done = boost::filesystem::create_directory(feat_dir);
+  if ( !done ) {
+    LOG(FATAL) << "Failed to create a feature directory.";
+  }
+}
+
+
+inline void SaveMeta(const string & root_dir, const string & featname,
+    const shared_ptr<Blob<float> > & feature_blob, int num_mini_batches) {
+  int batch_size = feature_blob->num();
+  int channels = feature_blob->channels();
+  int height = feature_blob->height();
+  int width = feature_blob->width();
+  path meta_path = path(root_dir) / featname / "meta";
+  std::ofstream outf(meta_path.c_str(), std::ofstream::out);
+  outf << "float32" << std::endl;
+  outf << batch_size << '\t';
+  outf << channels << '\t';
+  outf << height << '\t';
+  outf << width << '\n';
+  for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index) {
+    outf << batch_index << std::endl;
+  }
+}
+
+inline void SaveMeta(const string & root_dir, const string & featname,
+    const shared_ptr<Blob<double> > & feature_blob) {
+  int batch_size = feature_blob->num();
+  int channels = feature_blob->channels();
+  int height = feature_blob->height();
+  int width = feature_blob->width();
+  path meta_path = path(root_dir) / featname / "meta";
+  std::ofstream outf(meta_path.c_str(), std::ofstream::out);
+  outf << "float64" << std::endl;
+  outf << batch_size << '\t';
+  outf << channels << '\t';
+  outf << height << '\t';
+  outf << width << '\n';
+}
+
+template<typename Dtype>
+inline void DumpFeat(const string & root_dir, const string & featname,
+    const shared_ptr<Blob<Dtype> > & feature_blob, int batch_index) {
+  std::stringstream ssidx;
+  ssidx << batch_index;
+  path feat_path = path(root_dir) / featname / ssidx.str();
+  std::ofstream outf(feat_path.c_str(), std::ofstream::out|std::ofstream::binary);
+  const Dtype* feature_blob_data = feature_blob->cpu_data();
+  outf.write((char *)feature_blob_data, feature_blob->count() * sizeof(Dtype));
+}
+
 template<typename Dtype>
 int feature_extraction_pipeline(int argc, char** argv) {
   ::google::InitGoogleLogging(argv[0]);
-  const int num_required_args = 7;
+  const int num_required_args = 6;
   if (argc < num_required_args) {
     LOG(ERROR)<<
     "This program takes in a trained network and an input data layer, and then"
     " extract features of the input data produced by the net.\n"
     "Usage: extract_features  pretrained_net_param"
     "  feature_extraction_proto_file  extract_feature_blob_name1[,name2,...]"
-    "  save_feature_dataset_name1[,name2,...]  num_mini_batches  db_type"
+    "  save_feature_dir  num_mini_batches "
     "  [CPU/GPU] [DEVICE_ID=0]\n"
     "Note: you can extract multiple features in one pass by specifying"
     " multiple feature blob names and dataset names separated by ','."
@@ -104,33 +159,20 @@ int feature_extraction_pipeline(int argc, char** argv) {
   std::vector<std::string> blob_names;
   boost::split(blob_names, extract_feature_blob_names, boost::is_any_of(","));
 
-  std::string save_feature_dataset_names(argv[++arg_pos]);
-  std::vector<std::string> dataset_names;
-  boost::split(dataset_names, save_feature_dataset_names,
-               boost::is_any_of(","));
-  CHECK_EQ(blob_names.size(), dataset_names.size()) <<
-      " the number of blob names and dataset names must be equal";
-  size_t num_features = blob_names.size();
+  std::string root_dir(argv[++arg_pos]);
 
+  size_t num_features = blob_names.size();
   for (size_t i = 0; i < num_features; i++) {
     CHECK(feature_extraction_net->has_blob(blob_names[i]))
         << "Unknown feature blob name " << blob_names[i]
         << " in the network " << feature_extraction_proto;
   }
 
-  int num_mini_batches = atoi(argv[++arg_pos]);
-
-  std::vector<shared_ptr<db::DB> > feature_dbs;
-  std::vector<shared_ptr<db::Transaction> > txns;
-  const char* db_type = argv[++arg_pos];
-  for (size_t i = 0; i < num_features; ++i) {
-    LOG(INFO)<< "Opening dataset " << dataset_names[i];
-    shared_ptr<db::DB> db(db::GetDB(db_type));
-    db->Open(dataset_names.at(i), db::NEW);
-    feature_dbs.push_back(db);
-    shared_ptr<db::Transaction> txn(db->NewTransaction());
-    txns.push_back(txn);
+  for (size_t i = 0; i < num_features; i++) {
+    MakeFeatDir(root_dir, blob_names[i]);
   }
+
+  int num_mini_batches = atoi(argv[++arg_pos]);
 
   LOG(ERROR)<< "Extacting Features";
 
@@ -138,47 +180,22 @@ int feature_extraction_pipeline(int argc, char** argv) {
   std::vector<Blob<float>*> input_vec;
   std::vector<int> image_indices(num_features, 0);
   for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index) {
+    if (batch_index % 100 == 0) {
+      LOG(ERROR) << "\t" << batch_index << "/" << num_mini_batches;
+    }
     feature_extraction_net->Forward(input_vec);
     for (int i = 0; i < num_features; ++i) {
       const shared_ptr<Blob<Dtype> > feature_blob = feature_extraction_net
           ->blob_by_name(blob_names[i]);
-      int batch_size = feature_blob->num();
-      int dim_features = feature_blob->count() / batch_size;
-      const Dtype* feature_blob_data;
-      for (int n = 0; n < batch_size; ++n) {
-        datum.set_height(feature_blob->height());
-        datum.set_width(feature_blob->width());
-        datum.set_channels(feature_blob->channels());
-        datum.clear_data();
-        datum.clear_float_data();
-        feature_blob_data = feature_blob->cpu_data() +
-            feature_blob->offset(n);
-        for (int d = 0; d < dim_features; ++d) {
-          datum.add_float_data(feature_blob_data[d]);
-        }
-        string key_str = caffe::format_int(image_indices[i], 10);
-
-        string out;
-        CHECK(datum.SerializeToString(&out));
-        txns.at(i)->Put(key_str, out);
-        ++image_indices[i];
-        if (image_indices[i] % 1000 == 0) {
-          txns.at(i)->Commit();
-          txns.at(i).reset(feature_dbs.at(i)->NewTransaction());
-          LOG(ERROR)<< "Extracted features of " << image_indices[i] <<
-              " query images for feature blob " << blob_names[i];
-        }
-      }  // for (int n = 0; n < batch_size; ++n)
+      DumpFeat(root_dir, blob_names[i], feature_blob, batch_index);
     }  // for (int i = 0; i < num_features; ++i)
   }  // for (int batch_index = 0; batch_index < num_mini_batches; ++batch_index)
-  // write the last batch
+  LOG(INFO) << "\t" << num_mini_batches << "/" << num_mini_batches;
+  // write the meta data
   for (int i = 0; i < num_features; ++i) {
-    if (image_indices[i] % 1000 != 0) {
-      txns.at(i)->Commit();
-    }
-    LOG(ERROR)<< "Extracted features of " << image_indices[i] <<
-        " query images for feature blob " << blob_names[i];
-    feature_dbs.at(i)->Close();
+    const shared_ptr<Blob<Dtype> > feature_blob = feature_extraction_net
+      ->blob_by_name(blob_names[i]);
+    SaveMeta(root_dir, blob_names[i], feature_blob, num_mini_batches);
   }
 
   LOG(ERROR)<< "Successfully extracted the features!";

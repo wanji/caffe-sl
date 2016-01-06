@@ -80,7 +80,7 @@ class AccuracyLayer : public Layer<Dtype> {
   // If there are two top blobs, then the second blob will contain
   // accuracies per class.
   virtual inline int MinTopBlobs() const { return 1; }
-  virtual inline int MaxTopBlos() const { return 2; }
+  virtual inline int MaxTopBlobs() const { return 2; }
 
  protected:
   /**
@@ -785,6 +785,12 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
+  /// Read the normalization mode parameter and compute the normalizer based
+  /// on the blob size.  If normalization_mode is VALID, the count of valid
+  /// outputs will be read from valid_count, unless it is -1 in which case
+  /// all outputs are assumed to be valid.
+  virtual Dtype get_normalizer(
+      LossParameter_NormalizationMode normalization_mode, int valid_count);
 
   /// The internal SoftmaxLayer used to map predictions to a distribution.
   shared_ptr<Layer<Dtype> > softmax_layer_;
@@ -798,9 +804,8 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   bool has_ignore_label_;
   /// The label indicating that an instance should be ignored.
   int ignore_label_;
-  /// Whether to normalize the loss by the total number of values present
-  /// (otherwise just by the batch size).
-  bool normalize_;
+  /// How to normalize the output loss.
+  LossParameter_NormalizationMode normalization_;
 
   int softmax_axis_, outer_num_, inner_num_;
 };
@@ -846,6 +851,71 @@ class PairwiseRankingLossLayer : public LossLayer<Dtype> {
   virtual inline bool AllowForceBackward(const int bottom_index) const {
     return true;
   }
+};
+
+/**
+ * @brief Computes the upper bound of the HDML loss.
+ *
+ * @param bottom input Blob vector (length 3)
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      query feature.
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      positive feature.
+ *   -# @f$ (N \times B \times 1 \times 1) @f$
+ *      negative feature.
+ * @param top output Blob vector (length 1)
+ *   -# @f$ (1 \times 1 \times 1 \times 1) @f$
+ *      the computed upper bound of the HDML loss: @f$ E =
+ *      @f$
+ */
+template <typename Dtype>
+class HDMLLossUpperBoundLayer : public LossLayer<Dtype> {
+ public:
+  explicit HDMLLossUpperBoundLayer(const LayerParameter& param)
+      : LossLayer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "HDMLLossUpperBound"; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+  virtual inline int ExactNumBottomBlobs() const { return 3; }
+
+ protected:
+  /// @copydoc HDMLLossUpperBoundLayer
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  /**
+   * @brief Computes the hinge loss error gradient w.r.t. the similarities.
+   */
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  /**
+   * Unlike most loss layers, in the HDMLLossUpperBoundLayer we can backpropagate
+   * to both inputs -- override to return true and always allow force_backward.
+   */
+  virtual inline bool AllowForceBackward(const int bottom_index) const {
+    return true;
+  }
+ private:
+  void compute_h(const Blob<Dtype> * qry,
+      const Blob<Dtype> * pos, const Blob<Dtype> * neg);
+  void compute_infer_loss(const Blob<Dtype> * qry,
+      const Blob<Dtype> * pos, const Blob<Dtype> * neg);
+  Dtype compute_loss_ub();
+
+  Blob<Dtype> infer_cont_;      // N x D x 3 x 1, cont(i, e_i) in Eq (10)
+  Blob<int> infer_qry_buffer_;  // N x D x 3 x 1, a in Eq (10)
+  Blob<int> infer_pos_buffer_;  // N x D x 3 x 1, b in Eq (10)
+  Blob<int> infer_neg_buffer_;  // N x D x 3 x 1, c in Eq (10)
+
+  Blob<int> h_qry_;             // N x D x 1 x 1, h   in Eq(6)
+  Blob<int> h_pos_;             // N x D x 1 x 1, h^+ in Eq(6)
+  Blob<int> h_neg_;             // N x D x 1 x 1, h^- in Eq(6)
+
+  Blob<int> g_qry_;             // N x D x 1 x 1, g   in Eq(6)
+  Blob<int> g_pos_;             // N x D x 1 x 1, g^+ in Eq(6)
+  Blob<int> g_neg_;             // N x D x 1 x 1, g^- in Eq(6)
 };
 
 }  // namespace caffe
