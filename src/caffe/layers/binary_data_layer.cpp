@@ -143,12 +143,8 @@ void BinaryDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     }
   }
   batch_timer.Stop();
-  // DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
-  // DLOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
-  if (time_idx++ % 100 == 0) {
-    LOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
-    LOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
-  }
+  DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
+  DLOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
 }
 
 INSTANTIATE_CLASS(BinaryDataLayer);
