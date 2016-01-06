@@ -5,6 +5,8 @@
 
 ## Example
 
+`caffe-sl` is fully compatible with `caffe`, please follow the instructions from the project site of [`caffe`](http://caffe.berkeleyvision.org/) to build `caffe-sl` before you start.
+
 ```!bash
 # get the MNIST dataset
 ./data/mnist/get_data.sh
