@@ -13,7 +13,7 @@
 # extract images and generate triplets
 ./examples/mnist_sl/create_mnist.sh
 # training
-./examples/mnist_sl/train_lenet.sh 
+./examples/mnist_sl/train_lenet_naive.sh 
 ```
 
 
@@ -40,14 +40,11 @@ caffe-sl $ head examples/mnist_sl/data/train.tri
 
 The first column consists of query images, the second column consists of positive images, and the third column consists of negative images.
 
-### 2. Loss layers
+### 2. Loss layer
 
 The example use cosine similarity.
-The output of the last feature layer is feed to a `SliceLayer`, which split the features into three parts: query, positive, and negative features.
-The two `slice_point`s shoud be set to `batch_size` and `batch_size * 2`.
-
-The similarities between query and positive images, query and negative images will be calculated separately. 
-Then, these similarities will be feed to the `PairwiseRankingLossLayer`.
+The output of the last feature layer is normalized and then feed to the NaiveTripletLossLayer.
+The NaiveTripletLossLayer splits the features into three parts: query, positive, and negative features and compute triplet similarity learning loss on them.
 
 <!--
 ## Citation
