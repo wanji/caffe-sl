@@ -22,7 +22,7 @@ void PairwiseRankingLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bo
   loss[0] = 0;
   for (int i=0; i<count; ++i) {
     per_triplet_loss[i] = std::max(Dtype(0),
-        this->layer_param_.pairwise_ranking_loss_param().margin()
+        this->layer_param_.triplet_loss_param().margin()
         - pos_sim[i] + neg_sim[i]);
     loss[0] += per_triplet_loss[i];
   }
