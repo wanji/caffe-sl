@@ -17,7 +17,7 @@ power: 0.75
 # Display every 100 iterations
 display: 100
 # The maximum number of iterations
-max_iter: 2000
+max_iter: 6000
 # snapshot intermediate results
 snapshot: 1000
 snapshot_prefix: "examples/mnist_sl/lenet_batch"
