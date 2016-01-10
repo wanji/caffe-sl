@@ -1,8 +1,9 @@
 name: "LeNet"
 layer {
   name: "mnist"
-  type: "TripletImageData"
+  type: "ImageData"
   top: "data"
+  top: "label"
   include {
     phase: TRAIN
   }
@@ -10,7 +11,7 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "examples/mnist_sl/data/train.tri"
+    source: "examples/mnist_sl/data/train.bat"
     new_width: 28
     new_height: 28
     batch_size: 100
@@ -19,8 +20,9 @@ layer {
 }
 layer {
   name: "mnist"
-  type: "TripletImageData"
+  type: "ImageData"
   top: "data"
+  top: "label"
   include {
     phase: TEST
   }
@@ -28,7 +30,7 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "examples/mnist_sl/data/t10k.tri"
+    source: "examples/mnist_sl/data/t10k.bat"
     new_width: 28
     new_height: 28
     batch_size: 100
@@ -159,12 +161,13 @@ layer {
 }
 layer {
   name: "loss"
-  type: "NaiveTripletLoss"
+  type: "BatchTripletLoss"
   bottom: "ip2norm"
+  bottom: "label"
   top: "loss"
   top: "accuracy"
+  # top: "debug"
   triplet_loss_param {
     margin: 1
-    sim_type: "DotProductSimilarity"
   }
 }
