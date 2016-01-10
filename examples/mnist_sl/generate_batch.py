@@ -72,8 +72,8 @@ def main(args):
         num_img = len(imgs)
         num_grp = int(math.ceil(num_img * num_repeat * 1.0 / group_size))
         if num_img < group_size:
-            raise Exception(
-                "number of images with label %s is less than group size")
+            logging.warn("number of images with label " + label +
+                         " is less than group size")
         idx = num_img
         for i in xrange(num_grp):
             if idx + group_size <= num_img:
