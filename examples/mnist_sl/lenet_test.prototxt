@@ -1,26 +1,9 @@
 name: "LeNet"
 layer {
   name: "mnist"
-  type: "TripletImageData"
+  type: "ImageData"
   top: "data"
-  include {
-    phase: TRAIN
-  }
-  transform_param {
-    scale: 0.00390625
-  }
-  image_data_param {
-    source: "examples/mnist_sl/data/train.tri"
-    new_width: 28
-    new_height: 28
-    batch_size: 16
-    root_folder: "examples/mnist_sl/data/train/"
-  }
-}
-layer {
-  name: "mnist"
-  type: "TripletImageData"
-  top: "data"
+  top: "label"
   include {
     phase: TEST
   }
@@ -28,10 +11,10 @@ layer {
     scale: 0.00390625
   }
   image_data_param {
-    source: "examples/mnist_sl/data/t10k.tri"
+    source: "examples/mnist_sl/data/t10k.lst"
     new_width: 28
     new_height: 28
-    batch_size: 16
+    batch_size: 100
     root_folder: "examples/mnist_sl/data/t10k/"
   }
 }
@@ -151,58 +134,9 @@ layer {
     }
   }
 }
-layer {
-  name: "l2"
-  type: "L2Norm"
-  bottom: "ip2"
-  top: "ip2norm"
-}
-layer {
-  name: "triplet"
-  type: "Slice"
-  bottom: "ip2norm"
-  top: "qry"
-  top: "pos"
-  top: "neg"
-  slice_param {
-    axis: 0
-    slice_point: 16
-    slice_point: 32
-  }
-}
-layer {
-  name: "pos_sim"
-  type: "DotProductSimilarity"
-  # type: "EuclideanSimilarity"
-  bottom: "qry"
-  bottom: "pos"
-  top: "pos_sim"
-}
-layer {
-  name: "neg_sim"
-  type: "DotProductSimilarity"
-  # type: "EuclideanSimilarity"
-  bottom: "qry"
-  bottom: "neg"
-  top: "neg_sim"
-}
-layer {
-  name: "loss"
-  type: "PairwiseRankingLoss"
-  bottom: "pos_sim"
-  bottom: "neg_sim"
-  top: "loss"
-  pairwise_ranking_loss_param {
-    margin: 1
-  }
-}
-layer {
-  name: "accuracy"
-  type: "RankAccuracy"
-  bottom: "pos_sim"
-  bottom: "neg_sim"
-  top: "accuracy"
-  include {
-    phase: TEST
-  }
-}
+# layer {
+#   name: "l2"
+#   type: "L2Norm"
+#   bottom: "ip2"
+#   top: "ip2norm"
+# }
