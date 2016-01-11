@@ -121,8 +121,8 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
             neg_dist = dist_data[k];
             // DLOG(INFO) << "\t" << pos_dist << "\t" << neg_dist;
             cur_loss = margin_ + pos_dist - neg_dist;
+            num_err += (pos_dist >= neg_dist);
             if (cur_loss > 0) {
-              ++num_err;
               avg_loss += cur_loss;
               if (neg_dist > pos_dist) {
                 smp_loss += cur_loss;

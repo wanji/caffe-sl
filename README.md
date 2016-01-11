@@ -1,6 +1,7 @@
 # caffe-sl
 
 `caffe`-based implementation of the Deep Similarity Learning algorithm used in the [MM 2014 paper](http://dl.acm.org/citation.cfm?id=2654948).
+Other similarity learning algorithms are still under development.
 
 
 ## Example
@@ -44,7 +45,11 @@ The first column consists of query images, the second column consists of positiv
 
 The example use cosine similarity.
 The output of the last feature layer is normalized and then feed to the NaiveTripletLossLayer.
-The NaiveTripletLossLayer splits the features into three parts: query, positive, and negative features and compute triplet similarity learning loss on them.
+The NaiveTripletLossLayer splits the features into three parts: query, positive, and negative features and compute hinge loss on triplet:
+
+```
+l(qry, pos, neg) = max{0, margin - S(qry, pos) + S(qry, neg)}
+```
 
 <!--
 ## Citation
