@@ -29,7 +29,7 @@ extract() {
 
 FEAT_NAME=ip2
 
-for MD_NAME in batch_iter_6000 naive_iter_2000 batch_iter_2000; do
+for MD_NAME in naive_iter_2000 batch_iter_600 batch_iter_200; do
 # for MD_NAME in naive_iter_2000 batch_iter_2000; do
   for sp in train test; do
     MD=examples/mnist_sl/lenet_$MD_NAME.caffemodel

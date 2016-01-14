@@ -14,7 +14,7 @@ layer {
     source: "examples/mnist_sl/data/train.bat"
     new_width: 28
     new_height: 28
-    batch_size: 100
+    batch_size: 1000
     root_folder: "examples/mnist_sl/data/train/"
   }
 }
@@ -33,7 +33,7 @@ layer {
     source: "examples/mnist_sl/data/t10k.bat"
     new_width: 28
     new_height: 28
-    batch_size: 100
+    batch_size: 1000
     root_folder: "examples/mnist_sl/data/t10k/"
   }
 }
