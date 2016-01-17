@@ -47,6 +47,8 @@ def getargs():
                         help="Ks")
     parser.add_argument("--num_test", type=int,
                         help="number of test images")
+    parser.add_argument("--dist_type", type=str, default='euclidean',
+                        help="type of distance (euclidean, cosine, dotproduct)")
     parser.add_argument("--log", type=str, default="INFO",
                         help="log level")
 
@@ -74,13 +76,33 @@ def knn_classifer(knn_label):
     return pred
 
 
+def DotProduct(feat, query):
+    """ dot product distance.
+    """
+    return -query.dot(feat.T)
+
+
+def Euclidean(feat, query):
+    """ Euclidean distance.
+    """
+    (nQ, D) = query.shape
+    (N, D) = feat.shape
+    dotprod = query.dot(feat.T)
+    qryl2norm = (query ** 2).sum(1).reshape(-1, 1)
+    featl2norm = (feat ** 2).sum(1).reshape(1, -1)
+
+    return qryl2norm + featl2norm - 2 * dotprod
+
+
 def main(args):
     """ Main entry.
     """
 
     logging.info("Loading features")
-    trn_feat = normalization(loadmat(args.train_feat)['feat'])
-    tst_feat = normalization(loadmat(args.test_feat)['feat'])
+    # trn_feat = normalization(loadmat(args.train_feat)['feat'])
+    # tst_feat = normalization(loadmat(args.test_feat)['feat'])
+    trn_feat = loadmat(args.train_feat)['feat'].astype(np.float)
+    tst_feat = loadmat(args.test_feat)['feat'].astype(np.float)
     logging.info("\tDone!")
 
     logging.info("Loading labels")
@@ -101,14 +123,19 @@ def main(args):
         tst_label = tst_label[:num_test]
 
     logging.info("Computing distances")
-    dist = -tst_feat.dot(trn_feat.T)
+    if args.dist_type == "euclidean":
+        dist = Euclidean(trn_feat, tst_feat)
+    elif args.dist_type == "cosine":
+        trn_feat = normalization(trn_feat)
+        tst_feat = normalization(tst_feat)
+        dist = DotProduct(trn_feat, tst_feat)
+    elif args.dist_type == "dotproduct":
+        dist = DotProduct(trn_feat, tst_feat)
+    else:
+        raise Exception("Invalid distance type.")
     logging.info("\tDone!")
 
     maxK = min(max(args.Ks), trn_feat.shape[0])
-
-    # logging.info("Sorting")
-    # idxs = dist.argsort(1)[:, :maxK]
-    # logging.info("\tDone!")
 
     logging.info("Sorting")
     idxs = np.empty((num_test, maxK), np.int)
