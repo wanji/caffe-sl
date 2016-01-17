@@ -19,6 +19,7 @@ void BatchTripletLossLayer<Dtype>::LayerSetUp(
   }
     
   margin_ = this->layer_param_.triplet_loss_param().margin();
+  mu_ = this->layer_param_.triplet_loss_param().mu();
 }
 
 template <typename Dtype>
@@ -98,6 +99,7 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
   Dtype cur_loss;
   Dtype pos_dist;
   Dtype neg_dist;
+  Dtype one_minus_mu = Dtype(1) - mu_;
   // classes
   for (int c=0; c<boundary.size()-1; c++) {
     // query
@@ -123,9 +125,11 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
             cur_loss = margin_ + pos_dist - neg_dist;
             num_err += (pos_dist >= neg_dist);
             if (cur_loss > 0) {
-              avg_loss += cur_loss;
+              avg_loss += cur_loss * mu_;
+              avg_loss += pos_dist * one_minus_mu;
               if (neg_dist > pos_dist) {
-                smp_loss += cur_loss;
+                smp_loss += cur_loss * mu_;
+                smp_loss += pos_dist * one_minus_mu;
                 triplets_.push_back(Triplet(i, j, k));
               }
             }
@@ -167,17 +171,23 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     int dim = count / num;
     memset(diff_data, 0, count * sizeof(diff_data[0]));
 
-    Dtype scale = Dtype(2) / triplets_.size();
+    Dtype scale1 = Dtype(2) / triplets_.size();
+    Dtype scale2 = Dtype(2) / triplets_.size() * mu_;
+    Dtype scale0 = scale1 - scale2;
     for (int i=0; i<triplets_.size(); ++i) {
       int qry_offset = feat->offset(triplets_[i].first_);
       int pos_offset = feat->offset(triplets_[i].second_);
       int neg_offset = feat->offset(triplets_[i].third_);
-      caffe_cpu_axpby(dim, +scale, feat_data + neg_offset, Dtype(1), diff_data + qry_offset);
-      caffe_cpu_axpby(dim, -scale, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
-      caffe_cpu_axpby(dim, +scale, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
-      caffe_cpu_axpby(dim, -scale, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
-      caffe_cpu_axpby(dim, +scale, feat_data + qry_offset, Dtype(1), diff_data + neg_offset);
-      caffe_cpu_axpby(dim, -scale, feat_data + neg_offset, Dtype(1), diff_data + neg_offset);
+
+      caffe_cpu_axpby(dim, +scale0, feat_data + qry_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, +scale2, feat_data + neg_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
+
+      caffe_cpu_axpby(dim, +scale1, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
+
+      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), diff_data + neg_offset);
+      caffe_cpu_axpby(dim, -scale2, feat_data + neg_offset, Dtype(1), diff_data + neg_offset);
     }
   }
 }

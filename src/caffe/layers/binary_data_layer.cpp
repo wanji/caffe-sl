@@ -103,7 +103,6 @@ void BinaryDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
-  static int time_idx = 0;
   CPUTimer timer;
   CHECK(batch->data_.count());
   ImageDataParameter image_data_param = this->layer_param_.image_data_param();

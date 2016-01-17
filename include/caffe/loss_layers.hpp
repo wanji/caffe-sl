@@ -1045,6 +1045,7 @@ class BatchTripletLossLayer : public LossLayer<Dtype> {
   Blob<Dtype> dist_;
   Blob<Dtype> norm_;
   Dtype margin_;
+  Dtype mu_;
 };
 
 }  // namespace caffe
