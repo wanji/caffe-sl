@@ -10,11 +10,14 @@ namespace caffe {
 template <typename Dtype>
 void BatchTripletLossLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
-  LossLayer<Dtype>::LayerSetUp(bottom, top);
+  CHECK_LE(this->layer_param_.loss_weight_size(), 1);
+  if (this->layer_param_.loss_weight_size() == 0) {
+    this->layer_param_.add_loss_weight(Dtype(1));
+  }
+
   // accuracy do not contribute to the loss
-  this->layer_param_.add_loss_weight(Dtype(0));
-  if (top.size() == 3) {
-    // debug information do not contribute to the loss
+  // debug information do not contribute to the loss
+  for (int i=this->layer_param_.loss_weight_size(); i<top.size(); ++i) {
     this->layer_param_.add_loss_weight(Dtype(0));
   }
     
@@ -96,6 +99,7 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
   Dtype avg_loss = 0.0;
   int num_tri = 0;
   int num_err = 0;
+  Dtype rank_loss;
   Dtype cur_loss;
   Dtype pos_dist;
   Dtype neg_dist;
@@ -122,14 +126,13 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
             ++num_tri;
             neg_dist = dist_data[k];
             // DLOG(INFO) << "\t" << pos_dist << "\t" << neg_dist;
-            cur_loss = margin_ + pos_dist - neg_dist;
+            rank_loss = margin_ + pos_dist - neg_dist;
             num_err += (pos_dist >= neg_dist);
-            if (cur_loss > 0) {
-              avg_loss += cur_loss * mu_;
-              avg_loss += pos_dist * one_minus_mu;
+            if (rank_loss > 0) {
+              cur_loss = rank_loss * mu_ + pos_dist * one_minus_mu;
+              avg_loss += cur_loss;
               if (neg_dist > pos_dist) {
-                smp_loss += cur_loss * mu_;
-                smp_loss += pos_dist * one_minus_mu;
+                smp_loss += cur_loss;
                 triplets_.push_back(Triplet(i, j, k));
               }
             }

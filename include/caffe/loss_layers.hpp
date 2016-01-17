@@ -1021,7 +1021,9 @@ class BatchTripletLossLayer : public LossLayer<Dtype> {
       const vector<Blob<Dtype>*>& top);
 
   virtual inline const char* type() const { return "BatchTripletLoss"; }
-  virtual inline int ExactNumTopBlobs() const { return 3; }
+  virtual inline int ExactNumTopBlobs() const { return -1; }
+  virtual inline int MinTopBlobs() const { return 2; }
+  virtual inline int MaxTopBlobs() const { return 3; }
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
