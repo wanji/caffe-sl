@@ -698,6 +698,7 @@ message HingeLossParameter {
 message TripletLossParameter {
   optional float margin = 1 [default = 1.0];
   optional string sim_type = 2 [default = "EuclideanSimilarity"];
+  optional float mu = 3 [default = 1.0];
 }
 
 message ImageDataParameter {
