@@ -94,6 +94,14 @@ def Euclidean(feat, query):
     return qryl2norm + featl2norm - 2 * dotprod
 
 
+def load_feat(feat_path, norm=False):
+    feat = loadmat(feat_path)['feat']
+    feat = feat.reshape(feat.shape[0], -1)
+    if norm:
+        feat = normalization(feat)
+    return feat
+
+
 def main(args):
     """ Main entry.
     """
@@ -101,8 +109,8 @@ def main(args):
     logging.info("Loading features")
     # trn_feat = normalization(loadmat(args.train_feat)['feat'])
     # tst_feat = normalization(loadmat(args.test_feat)['feat'])
-    trn_feat = loadmat(args.train_feat)['feat'].astype(np.float)
-    tst_feat = loadmat(args.test_feat)['feat'].astype(np.float)
+    trn_feat = load_feat(args.train_feat).astype(np.float)
+    tst_feat = load_feat(args.test_feat).astype(np.float)
     logging.info("\tDone!")
 
     logging.info("Loading labels")
@@ -122,7 +130,7 @@ def main(args):
         tst_feat = tst_feat[:num_test]
         tst_label = tst_label[:num_test]
 
-    logging.info("Computing distances")
+    logging.info("Computing `{}` distances".format(args.dist_type))
     if args.dist_type == "euclidean":
         dist = Euclidean(trn_feat, tst_feat)
     elif args.dist_type == "cosine":
