@@ -1044,6 +1044,7 @@ class BatchTripletLossLayer : public LossLayer<Dtype> {
   //     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
   vector<Triplet> triplets_;
+  vector<pair<int, int> > pos_pairs_;
   Blob<Dtype> dist_;
   Blob<Dtype> norm_;
   Dtype margin_;

@@ -166,9 +166,9 @@ layer {
   bottom: "label"
   top: "loss"
   top: "accuracy"
-  # top: "debug"
+  top: "debug"
   triplet_loss_param {
-    margin: 1
-    # mu: 0.9
+    margin: 0.5
+    mu: 0.5
   }
 }
