@@ -29,12 +29,14 @@ template <typename Dtype>
 void BatchTripletLossLayer<Dtype>::Reshape(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   vector<int> loss_shape(0);      // Loss layers output a scalar; 0 axes.
-  top[0]->Reshape(loss_shape);    // average loss over all triplets
+  top[0]->Reshape(loss_shape);    // average loss (rank_loss + pair_loss)
   top[1]->Reshape(loss_shape);    // average accuracy rate of all triplets
   if (top.size() == 3) {
-    top[2]->Reshape(1, 1, 1, 3);    // 0: average loss over sampled triplets
-                                    // 1: number of possible triplets
-                                    // 2: number of sampled triplets
+    top[2]->Reshape(1, 1, 1, 5);    // 0: average rank loss over sampled triplets
+                                    // 1: average rank loss over all triplets
+                                    // 2: average pair loss
+                                    // 3: number of possible triplets
+                                    // 4: number of sampled triplets
   }
 
   int num = bottom[0]->num();
@@ -60,6 +62,7 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
   Dtype* norm_data = norm_.mutable_cpu_data();
   memset(norm_data, 0, norm_.count() * sizeof(norm_data[0]));
   triplets_.clear();
+  pos_pairs_.clear();
 
   Dtype* dist_data = dist_.mutable_cpu_data();
   caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, num, num, dim, Dtype(-2),
@@ -95,15 +98,36 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
   /**
    * Sampling triplets and computing the loss
    */
-  Dtype smp_loss = 0.0;
-  Dtype avg_loss = 0.0;
+  Dtype pair_loss = Dtype(0);
+  Dtype rank_loss = Dtype(0);
+  Dtype smp_rank_loss = Dtype(0);
   int num_tri = 0;
   int num_err = 0;
-  Dtype rank_loss;
-  Dtype cur_loss;
+  Dtype cur_rank_loss;
   Dtype pos_dist;
   Dtype neg_dist;
   Dtype one_minus_mu = Dtype(1) - mu_;
+
+  if (one_minus_mu > Dtype(0)) {
+    // classes
+    for (int c=0; c<boundary.size()-1; c++) {
+      // query
+      for (int i=boundary[c]; i<boundary[c+1]; ++i) {
+        const Dtype * dist_data  = dist_.cpu_data() + dist_.offset(i);
+        // positive
+        for (int j=boundary[c]; j<boundary[c+1]; ++j) {
+          if (i == j) {
+            continue;
+          }
+          pair_loss += dist_data[j];
+          pos_pairs_.push_back(make_pair<int, int>(i, j));
+        }
+      }
+    }
+  }
+  int num_pair = pos_pairs_.size();
+  pair_loss = num_pair > 0 ? pair_loss / num_pair : 0;
+
   // classes
   for (int c=0; c<boundary.size()-1; c++) {
     // query
@@ -126,13 +150,13 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
             ++num_tri;
             neg_dist = dist_data[k];
             // DLOG(INFO) << "\t" << pos_dist << "\t" << neg_dist;
-            rank_loss = margin_ + pos_dist - neg_dist;
+            cur_rank_loss = margin_ + pos_dist - neg_dist;
+            // LOG(INFO) << cur_rank_loss;
             num_err += (pos_dist >= neg_dist);
-            if (rank_loss > 0) {
-              cur_loss = rank_loss * mu_ + pos_dist * one_minus_mu;
-              avg_loss += cur_loss;
+            if (cur_rank_loss > 0) {
+              rank_loss += cur_rank_loss;
               if (neg_dist > pos_dist) {
-                smp_loss += cur_loss;
+                smp_rank_loss += cur_rank_loss;
                 triplets_.push_back(Triplet(i, j, k));
               }
             }
@@ -141,20 +165,26 @@ void BatchTripletLossLayer<Dtype>::Forward_cpu(
       } // end of positive
     } // end of query
   } // end of classes
+  rank_loss = num_tri > 0 ? rank_loss / num_tri : 0;
 
-  int num_smp = triplets_.size();
   // average loss among all triplets
-  loss_data[0] = num_tri > 0 ? avg_loss / num_tri : 0;
+  loss_data[0] = rank_loss * mu_ + pair_loss * one_minus_mu;
   // average accuracy among all triplets
   accy_data[0] = Dtype(1) - (num_tri > 0 ? Dtype(num_err) / num_tri : 0);
   if (top.size() == 3) {
+    int num_smp = triplets_.size();
     Dtype* debug_data = top[2]->mutable_cpu_data();
-    // average loss among selected triplets
-    debug_data[0] = num_smp > 0 ? smp_loss / num_smp : 0;
-    // number of triplets
-    debug_data[1] = num_tri;
-    // number of sampled triplets
-    debug_data[2] = num_smp;
+
+    // 0: average rank loss over sampled triplets
+    debug_data[0] = num_smp > 0 ? smp_rank_loss / num_smp : 0;
+    // 1: average rank loss over all triplets
+    debug_data[1] = rank_loss;
+    // 2: average pair loss
+    debug_data[2] = pair_loss;
+    // 3: number of possible triplets
+    debug_data[3] = num_tri;
+    // 4: number of sampled triplets
+    debug_data[4] = num_smp;
   }
 }
 
@@ -174,23 +204,32 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     int dim = count / num;
     memset(diff_data, 0, count * sizeof(diff_data[0]));
 
-    Dtype scale1 = Dtype(2) / triplets_.size();
-    Dtype scale2 = Dtype(2) / triplets_.size() * mu_;
-    Dtype scale0 = scale1 - scale2;
+    Dtype scale1 = Dtype(2) / triplets_.size() * mu_;
     for (int i=0; i<triplets_.size(); ++i) {
       int qry_offset = feat->offset(triplets_[i].first_);
       int pos_offset = feat->offset(triplets_[i].second_);
       int neg_offset = feat->offset(triplets_[i].third_);
 
-      caffe_cpu_axpby(dim, +scale0, feat_data + qry_offset, Dtype(1), diff_data + qry_offset);
-      caffe_cpu_axpby(dim, +scale2, feat_data + neg_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, +scale1, feat_data + neg_offset, Dtype(1), diff_data + qry_offset);
       caffe_cpu_axpby(dim, -scale1, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
 
       caffe_cpu_axpby(dim, +scale1, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
       caffe_cpu_axpby(dim, -scale1, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
 
-      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), diff_data + neg_offset);
-      caffe_cpu_axpby(dim, -scale2, feat_data + neg_offset, Dtype(1), diff_data + neg_offset);
+      caffe_cpu_axpby(dim, +scale1, feat_data + qry_offset, Dtype(1), diff_data + neg_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + neg_offset, Dtype(1), diff_data + neg_offset);
+    }
+
+    Dtype scale2 = Dtype(2) / pos_pairs_.size() * (Dtype(1) - mu_);
+    for (int i=0; i<pos_pairs_.size(); ++i) {
+      int qry_offset = feat->offset(pos_pairs_[i].first);
+      int pos_offset = feat->offset(pos_pairs_[i].second);
+
+      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, -scale2, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
+
+      caffe_cpu_axpby(dim, +scale2, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
+      caffe_cpu_axpby(dim, -scale2, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
     }
   }
 }
