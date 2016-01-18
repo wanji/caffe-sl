@@ -29,8 +29,7 @@ extract() {
 
 FEAT_NAME=ip2
 
-for MD_NAME in batch_iter_2000 batch_iter_6000 naive_iter_2000; do
-# for MD_NAME in naive_iter_2000 batch_iter_2000; do
+for MD_NAME in batch_iter_2000 naive_iter_2000 batch_iter_10000; do
   for sp in train test; do
     MD=examples/mnist_sl/lenet_$MD_NAME.caffemodel
     PROTOTXT=examples/mnist_sl/lenet_$sp.prototxt
@@ -41,5 +40,6 @@ for MD_NAME in batch_iter_2000 batch_iter_6000 naive_iter_2000; do
     examples/mnist_sl/feature/$MD_NAME/test/$FEAT_NAME.mat \
     examples/mnist_sl/data/train.lst \
     examples/mnist_sl/data/t10k.lst \
+    --dist_type cosine \
     --Ks `seq 1 10` `seq 20 10 100` `seq 200 100 1000`
 done

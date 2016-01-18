@@ -20,6 +20,14 @@ void BatchTripletLossLayer<Dtype>::LayerSetUp(
   for (int i=this->layer_param_.loss_weight_size(); i<top.size(); ++i) {
     this->layer_param_.add_loss_weight(Dtype(0));
   }
+  if (top.size() == 3) {
+    LOG(INFO) << "Loss debug information:";
+    LOG(INFO) << "\t0: average rank loss over sampled triplets";
+    LOG(INFO) << "\t1: average rank loss over all triplets    ";
+    LOG(INFO) << "\t2: average pair loss                      ";
+    LOG(INFO) << "\t3: number of possible triplets            ";
+    LOG(INFO) << "\t4: number of sampled triplets             ";
+  }
     
   margin_ = this->layer_param_.triplet_loss_param().margin();
   mu_ = this->layer_param_.triplet_loss_param().mu();
@@ -32,11 +40,7 @@ void BatchTripletLossLayer<Dtype>::Reshape(
   top[0]->Reshape(loss_shape);    // average loss (rank_loss + pair_loss)
   top[1]->Reshape(loss_shape);    // average accuracy rate of all triplets
   if (top.size() == 3) {
-    top[2]->Reshape(1, 1, 1, 5);    // 0: average rank loss over sampled triplets
-                                    // 1: average rank loss over all triplets
-                                    // 2: average pair loss
-                                    // 3: number of possible triplets
-                                    // 4: number of sampled triplets
+    top[2]->Reshape(1, 1, 1, 5);
   }
 
   int num = bottom[0]->num();
