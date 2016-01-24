@@ -12,7 +12,6 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/format.hpp"
 #include "caffe/util/io.hpp"
-#include "caffe/vision_layers.hpp"
 
 using caffe::Blob;
 using caffe::Caffe;

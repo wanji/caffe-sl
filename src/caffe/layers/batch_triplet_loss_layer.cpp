@@ -2,7 +2,7 @@
 #include <cfloat>
 #include <vector>
 
-#include "caffe/loss_layers.hpp"
+#include "caffe/layers/batch_triplet_loss_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {

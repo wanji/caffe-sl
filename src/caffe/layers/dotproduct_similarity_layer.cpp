@@ -3,7 +3,7 @@
 #include "caffe/layer.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
-#include "caffe/similarity_layers.hpp"
+#include "caffe/layers/dotproduct_similarity_layer.hpp"
 
 namespace caffe {
 
