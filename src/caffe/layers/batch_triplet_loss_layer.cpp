@@ -46,6 +46,7 @@ void BatchTripletLossLayer<Dtype>::Reshape(
   int num = bottom[0]->num();
   dist_.Reshape(num, num, 1, 1);
   norm_.Reshape(num, 1, 1, 1);
+  aggregator_.reset(new SyncedMemory(num * num * sizeof(Dtype)));
 }
 
 
@@ -206,35 +207,40 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     int count = feat->count();
     int num = feat->num();
     int dim = count / num;
-    caffe_memset(count * sizeof(feat_diff[0]), 0, feat_diff);
+    int agg_step = num * sizeof(Dtype);
+    Dtype * agg_data = (Dtype *)aggregator_->mutable_cpu_data();
+    caffe_memset(num * agg_step, 0, agg_data);
 
     Dtype scale1 = Dtype(2) / triplets_.size() * mu_;
     for (int i=0; i<triplets_.size(); ++i) {
-      int qry_offset = feat->offset(triplets_[i].first_);
-      int pos_offset = feat->offset(triplets_[i].second_);
-      int neg_offset = feat->offset(triplets_[i].third_);
+      int qry_id = triplets_[i].first_;
+      int pos_id = triplets_[i].second_;
+      int neg_id = triplets_[i].third_;
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + neg_offset, Dtype(1), feat_diff + qry_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + pos_offset, Dtype(1), feat_diff + qry_offset);
+      agg_data[qry_id * num + neg_id] += scale1;
+      agg_data[qry_id * num + pos_id] -= scale1;
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + pos_offset, Dtype(1), feat_diff + pos_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + qry_offset, Dtype(1), feat_diff + pos_offset);
+      agg_data[pos_id * num + pos_id] += scale1;
+      agg_data[pos_id * num + qry_id] -= scale1;
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + qry_offset, Dtype(1), feat_diff + neg_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + neg_offset, Dtype(1), feat_diff + neg_offset);
+      agg_data[neg_id * num + qry_id] += scale1;
+      agg_data[neg_id * num + neg_id] -= scale1;
     }
 
     Dtype scale2 = Dtype(2) / pos_pairs_.size() * (Dtype(1) - mu_);
     for (int i=0; i<pos_pairs_.size(); ++i) {
-      int qry_offset = feat->offset(pos_pairs_[i].first);
-      int pos_offset = feat->offset(pos_pairs_[i].second);
+      int qry_id = pos_pairs_[i].first;
+      int pos_id = pos_pairs_[i].second;
 
-      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), feat_diff + qry_offset);
-      caffe_cpu_axpby(dim, -scale2, feat_data + pos_offset, Dtype(1), feat_diff + qry_offset);
+      agg_data[qry_id * num + qry_id] += scale2;
+      agg_data[qry_id * num + pos_id] -= scale2;
 
-      caffe_cpu_axpby(dim, +scale2, feat_data + pos_offset, Dtype(1), feat_diff + pos_offset);
-      caffe_cpu_axpby(dim, -scale2, feat_data + qry_offset, Dtype(1), feat_diff + pos_offset);
+      agg_data[pos_id * num + pos_id] += scale2;
+      agg_data[pos_id * num + qry_id] -= scale2;
     }
+
+    caffe_cpu_gemm(CblasNoTrans, CblasNoTrans, num, dim, num,
+        Dtype(1), agg_data, feat_data, Dtype(0), feat_diff);
   }
 }
 

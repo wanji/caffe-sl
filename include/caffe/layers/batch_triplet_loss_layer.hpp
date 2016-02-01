@@ -74,6 +74,7 @@ class BatchTripletLossLayer : public LossLayer<Dtype> {
   vector<pair<int, int> > pos_pairs_;
   Blob<Dtype> dist_;
   Blob<Dtype> norm_;
+  shared_ptr<SyncedMemory> aggregator_;
   Dtype margin_;
   Dtype mu_;
 };
