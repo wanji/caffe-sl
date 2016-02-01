@@ -202,11 +202,11 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (propagate_down[0]) {
     Blob<Dtype>* feat = bottom[0];
     const Dtype* feat_data = feat->cpu_data();
-    Dtype* diff_data = feat->mutable_cpu_diff();
+    Dtype* feat_diff = feat->mutable_cpu_diff();
     int count = feat->count();
     int num = feat->num();
     int dim = count / num;
-    memset(diff_data, 0, count * sizeof(diff_data[0]));
+    caffe_memset(count * sizeof(feat_diff[0]), 0, feat_diff);
 
     Dtype scale1 = Dtype(2) / triplets_.size() * mu_;
     for (int i=0; i<triplets_.size(); ++i) {
@@ -214,14 +214,14 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       int pos_offset = feat->offset(triplets_[i].second_);
       int neg_offset = feat->offset(triplets_[i].third_);
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + neg_offset, Dtype(1), diff_data + qry_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, +scale1, feat_data + neg_offset, Dtype(1), feat_diff + qry_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + pos_offset, Dtype(1), feat_diff + qry_offset);
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
+      caffe_cpu_axpby(dim, +scale1, feat_data + pos_offset, Dtype(1), feat_diff + pos_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + qry_offset, Dtype(1), feat_diff + pos_offset);
 
-      caffe_cpu_axpby(dim, +scale1, feat_data + qry_offset, Dtype(1), diff_data + neg_offset);
-      caffe_cpu_axpby(dim, -scale1, feat_data + neg_offset, Dtype(1), diff_data + neg_offset);
+      caffe_cpu_axpby(dim, +scale1, feat_data + qry_offset, Dtype(1), feat_diff + neg_offset);
+      caffe_cpu_axpby(dim, -scale1, feat_data + neg_offset, Dtype(1), feat_diff + neg_offset);
     }
 
     Dtype scale2 = Dtype(2) / pos_pairs_.size() * (Dtype(1) - mu_);
@@ -229,11 +229,11 @@ void BatchTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       int qry_offset = feat->offset(pos_pairs_[i].first);
       int pos_offset = feat->offset(pos_pairs_[i].second);
 
-      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), diff_data + qry_offset);
-      caffe_cpu_axpby(dim, -scale2, feat_data + pos_offset, Dtype(1), diff_data + qry_offset);
+      caffe_cpu_axpby(dim, +scale2, feat_data + qry_offset, Dtype(1), feat_diff + qry_offset);
+      caffe_cpu_axpby(dim, -scale2, feat_data + pos_offset, Dtype(1), feat_diff + qry_offset);
 
-      caffe_cpu_axpby(dim, +scale2, feat_data + pos_offset, Dtype(1), diff_data + pos_offset);
-      caffe_cpu_axpby(dim, -scale2, feat_data + qry_offset, Dtype(1), diff_data + pos_offset);
+      caffe_cpu_axpby(dim, +scale2, feat_data + pos_offset, Dtype(1), feat_diff + pos_offset);
+      caffe_cpu_axpby(dim, -scale2, feat_data + qry_offset, Dtype(1), feat_diff + pos_offset);
     }
   }
 }
