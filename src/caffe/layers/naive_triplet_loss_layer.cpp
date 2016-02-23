@@ -99,13 +99,14 @@ template <typename Dtype>
 void NaiveTripletLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   if (propagate_down[0]) {
+    bool sample = this->layer_param_.triplet_loss_param().sample();
     Dtype* pos_diff = pos_sim_.mutable_cpu_diff();
     Dtype* neg_diff = neg_sim_.mutable_cpu_diff();
     const Dtype* pos_sim = pos_sim_.cpu_data();
     const Dtype* neg_sim = neg_sim_.cpu_data();
     int count = pos_sim_.count();
     for (int i=0; i<count; ++i) {
-      if (pos_diff[i] && pos_sim[i] > neg_sim[i]) {
+      if (pos_diff[i] && (!sample || pos_sim[i] > neg_sim[i])) {
         pos_diff[i] = -1;
         neg_diff[i] = 1;
       } else {

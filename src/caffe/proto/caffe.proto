@@ -743,9 +743,14 @@ message HingeLossParameter {
 }
 
 message TripletLossParameter {
+  // margin between positive similarity and negative similarity
   optional float margin = 1 [default = 1.0];
+  // type of similarity 
   optional string sim_type = 2 [default = "EuclideanSimilarity"];
+  // weight of triplet loss
   optional float mu = 3 [default = 1.0];
+  // filtering out the very hard negative samples or not
+  optional bool sample = 4 [default = false];
 }
 
 message ImageDataParameter {

@@ -17,6 +17,7 @@ void BatchTripletLossLayer<Dtype>::Forward_gpu(
   Dtype* accy_data = top[1]->mutable_cpu_data();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / num;
+  bool sample = this->layer_param_.triplet_loss_param().sample();
 
   /**
    * Computing the pairwise Euclidean distance
@@ -117,7 +118,7 @@ void BatchTripletLossLayer<Dtype>::Forward_gpu(
             num_err += (pos_dist >= neg_dist);
             if (cur_rank_loss > 0) {
               rank_loss += cur_rank_loss;
-              if (neg_dist > pos_dist) {
+              if (!sample || neg_dist > pos_dist) {
                 smp_rank_loss += cur_rank_loss;
                 triplets_.push_back(Triplet(i, j, k));
               }
