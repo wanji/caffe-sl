@@ -72,7 +72,6 @@ def main(args):
             feat = feat.reshape(-1, dim)
             num = min(feat.shape[0], len(img_lst)-idx)
             for i in xrange(num):
-                print idx
                 feat[i].tofile(os.path.join(args.bin_dir, img_lst[idx]))
                 idx += 1
             os.unlink(bat_path)
