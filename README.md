@@ -68,6 +68,29 @@ Please cite the following paper if you use this code:
 ```
 -->
 
+## New Layers
+
+### finished
+
+- `TripletImageDataLayer`     load image data in triplet manner
+- `TripletBinaryDataLayer`    load binary data in triplet manner
+- `BinaryDataLayer`           similar to ImageDataLayer
+
+- `L2NormLayer`               l2-normalization
+- `DotProductSimilarityLayer` element-wise dot-product similarity
+- `EuclideanSimilarityLayer`  element-wise euclidean similarity
+
+- `BatchTripletLossLayer`     triplet based similarity learning in batch mode
+- `NaiveTripletLossLayer`     triplet based similarity learning in list mode
+- `PairwiseRankingLossLayer`  pair wise learning to rank
+- `RankAccuracyLayer`         ranking accuracy
+
+
+### unfinished
+
+- `HDMLLossUpperBoundLayer`   Hamming distance metric learning
+
+
 ------------------------------------------------
 
 # Caffe

@@ -1,4 +1,4 @@
-#include "caffe/similarity_layers.hpp"
+#include "caffe/layers/similarity_layer.hpp"
 
 namespace caffe {
 

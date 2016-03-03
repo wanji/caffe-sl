@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "caffe/data_layers.hpp"
+#include "caffe/layers/binary_data_layer.hpp"
 #include "caffe/util/benchmark.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
