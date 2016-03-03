@@ -67,11 +67,11 @@ def load_feat(path):
 def main(args):
     """ Main entry.
     """
-    logging.info("Loading mat files ...")
+    logging.info("Loading `mat` files ...")
     feat = load_feat(args.dir)
     logging.info("\tDone!")
 
-    logging.info("Saving mat files ...")
+    logging.info("Saving `{}` files ...".format(args.out_type))
     if args.out_type == "mat":
         savemat(args.out, {'feat': feat})
     elif args.out_type == "h5":
