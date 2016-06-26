@@ -33,7 +33,7 @@ void EuclideanSimilarityLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bo
     sim[i] = caffe_cpu_dot(dim, pd, pd);
     pd += dim;
   }
-  caffe_cpu_scale(num, Dtype(-1.0), sim, sim);
+  caffe_cpu_scale(num, Dtype(-0.5), sim, sim);
 }
 
 template <typename Dtype>
