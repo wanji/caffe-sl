@@ -15,7 +15,6 @@ import argparse
 import logging
 import random
 import math
-import ipdb
 
 
 def runcmd(cmd):

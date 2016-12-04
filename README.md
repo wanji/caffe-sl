@@ -10,7 +10,7 @@ Other similarity learning algorithms are still under development.
 
 ```!bash
 # get the MNIST dataset
-./data/mnist/get_data.sh
+./data/mnist/get_mnist.sh
 # extract images and generate triplets
 ./examples/mnist_sl/create_mnist.sh
 # training

@@ -80,7 +80,7 @@ def main(args):
             qry, label = v_info[qry_imgid]
             for j in xrange(10):
                 pos = random.choice(img_lst[label])
-                if pos != label:
+                if pos != qry:
                     break
 
             while True:
