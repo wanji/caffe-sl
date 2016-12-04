@@ -18,12 +18,12 @@ extract() {
   mkdir -p $FEAT_DIR
 
   rm -fr $FEAT_DIR/$FEAT_NAME
-  ./build/bin/extract_features_to_dir $MD $PROTOTXT \
+  ./build/tools/extract_features_to_dir $MD $PROTOTXT \
     $FEAT_NAME $FEAT_DIR 100 GPU 0
   rm -fr $FEAT_DIR/$FEAT_NAME"_mat"
   ./scripts/bat2mat.py $FEAT_DIR/$FEAT_NAME       $FEAT_DIR/$FEAT_NAME"_mat"
   rm -fr $FEAT_DIR/$FEAT_NAME".mat"
-  ./scripts/dir2mat.py $FEAT_DIR/$FEAT_NAME"_mat" $FEAT_DIR/$FEAT_NAME".mat"
+  ./scripts/merge.py $FEAT_DIR/$FEAT_NAME"_mat" $FEAT_DIR/$FEAT_NAME".mat"
 }
 
 
